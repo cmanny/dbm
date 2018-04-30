@@ -1,0 +1,17 @@
+\BOOKMARK [1][-]{section.1}{Overview}{}% 1
+\BOOKMARK [2][-]{subsection.1.1}{Applications}{section.1}% 2
+\BOOKMARK [1][-]{section.2}{Established techniques}{}% 3
+\BOOKMARK [2][-]{subsection.2.1}{Autoregressive Models}{section.2}% 4
+\BOOKMARK [2][-]{subsection.2.2}{Dynamic Bayesian Networks}{section.2}% 5
+\BOOKMARK [2][-]{subsection.2.3}{Gaussian Processes}{section.2}% 6
+\BOOKMARK [2][-]{subsection.2.4}{Recurrent Neural Networks}{section.2}% 7
+\BOOKMARK [2][-]{subsection.2.5}{Expressivity}{section.2}% 8
+\BOOKMARK [1][-]{section.3}{Elements of Analysis}{}% 9
+\BOOKMARK [2][-]{subsection.3.1}{Dictionary learning}{section.3}% 10
+\BOOKMARK [2][-]{subsection.3.2}{Non-stationary distributions}{section.3}% 11
+\BOOKMARK [2][-]{subsection.3.3}{Manifolds}{section.3}% 12
+\BOOKMARK [2][-]{subsection.3.4}{Information saturation}{section.3}% 13
+\BOOKMARK [2][-]{subsection.3.5}{Latent variable interpretation}{section.3}% 14
+\BOOKMARK [2][-]{subsection.3.6}{Adversarial techniques}{section.3}% 15
+\BOOKMARK [2][-]{subsection.3.7}{Multiple sinks}{section.3}% 16
+\BOOKMARK [1][-]{section.4}{Conclusion}{}% 17

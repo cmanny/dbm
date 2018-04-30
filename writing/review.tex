@@ -1,0 +1,72 @@
+\documentclass[12pt]{article}
+\usepackage{titling}
+
+\setlength{\droptitle}{0em}
+\usepackage{graphics}
+% configure margin
+\usepackage[a4paper, margin=2cm]{geometry}
+
+% Packages for hyper links on references
+\usepackage[colorlinks]{hyperref}
+\usepackage[all]{hypcap}
+
+% operatorname
+\usepackage{mathtools}
+
+% Gives TODO capabilities, remove when finished.
+\usepackage{todonotes}
+% Fancy header, to nicely format top and bottom of pages
+\usepackage{fancyhdr}
+\usepackage{datetime}
+
+\pagestyle{fancy}
+% Set up the page sections
+\rfoot{\monthname[\month] \the\year}
+\cfoot{\thepage}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{\thepage}
+
+\begin{document}
+\title{Time-Series and Speech Processing\\ \small{A review}}
+\author{CNJ Mann}
+\date{\today}
+\maketitle
+
+\tableofcontents
+\pagebreak
+
+\section{Overview}
+
+\section{Time Series Modelling}
+
+\subsection{Stochastic Processes}
+
+\subsection{Autoregressive Models}
+
+\subsection{Dynamic Bayesian Networks}
+
+\subsection{Gaussian Processes}
+
+\subsection{Recurrent Neural Networks}
+
+\section{Speech Processing}
+
+\subsection{Features}
+
+\subsection{Activity Detection}
+
+\subsection{Recognition}
+
+\subsection{Synthesis}
+
+\subsection{Unsupervised Learning}
+
+\section{Conclusion}
+
+
+
+
+\bibliographystyle{plain}
+\bibliography{bib}
+
+\end{document}

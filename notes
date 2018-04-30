@@ -1,0 +1,52 @@
+dementiabank
+=
+
+Put into internal form
+Wapiti
+Match speech to text
+Phonemes/words over time
+
+
+Binary classification,
+Alzheimers vs dementia (vascular)
+MCI
+
+invariant across speakers, fhvae, pca, find the meaningful information, kmeans, interpretable clustering
+explaining the factors, decomposing distance into explainable factors
+aspects that are common to people with dementia
+
+Experiments / SPHERE house:
+
+    Add background noises
+    Add distractors
+    More complex words
+
+    Alexa/FireStick? Can send audio to sphere? Ideal, otherwise copy sphere data out
+    What to buy: Tablet / Alexa / Microphone (Directional) 
+
+    PESQ, PEAQ
+    Patients: repeat sentences (control sentence), amount of time before speaking (thinking time), phonemes
+    Cognitive load, reading vs. thinking vs. remembering
+    TV: splitter to get audio/video
+
+Venues:
+
+    ECML, MLSP, NIPS, Interspeech, ICASSP, AISTATS, AAAI, KDD
+
+    April 5th, May 1st, May ~5th, March 16th ...
+
+Current Projects / ideas:
+    speech clustering based on selectable criteria (via VAE/ PCA, or otherwise)
+    splitting audio into important pieces, summarisation, option selection, segmentation
+    work on dementiabank data: classification with interpretability
+    novelty detection, at hierarchical level.
+    multiple instance learning over time - structure in dementia speech
+
+    mocha test
+
+    screening test - find sub areas - objective evidence of difficulties
+    frontotemporal dementia - behavioural, disinhibited,
+      - speech output area - nonfluent primary progressive aphasia
+      - semantic variant - fluent but knowledge is affected - cannot distinguish between things
+
+    within certain period - improvement is noticed
