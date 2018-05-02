@@ -10,7 +10,8 @@ from signal_utils import spectrogram
 import numpy as np
 from queue import Queue
 import itertools
-import gc
+import enchant
+import sklearn
 
 
 # @UTF8
@@ -47,10 +48,11 @@ class Interview(object):
         return data
 
     def audio_segments(self, fft_size, win_size, thresh):
+        print(self.audio_file)
         wav = wavfile.read(self.audio_file)
         self.sample_rate = wav[0]
         adj = self.sample_rate // 1000
-        audio = wav[1].astype('float64')
+        self.audio = wav[1].astype('float64')
         segments = []
         lines = self.text_segments()
         if lines == None:
@@ -63,7 +65,7 @@ class Interview(object):
                 continue
             stadj = int(st) * adj
             etadj = int(et) * adj
-            audio_segment = audio[stadj : etadj]
+            audio_segment = self.audio[stadj : etadj]
             if len(audio_segment.shape) > 1:
                 audio_segment = np.sum(audio_segment, axis=1) // 2
             try:
@@ -74,13 +76,12 @@ class Interview(object):
                     )
                 )
             except:
-                pass
-                #print(audio_segment.shape)
+                print(audio_segment.shape)
         return segments
 
     def text_segments(self):
         self.cf = CHATFile(self.chat_file, self.pid)
-        return self.cf._parse_chat()
+        return self.cf._get_chat_lines()
 
     def __repr__(self):
         return "id: {}, cha_file: {}, aud_file: {}, scores: {}".format(self.pid, self.chat_file, self.audio_file, self.scores)
@@ -98,12 +99,16 @@ class CHATFile(object):
         self.inv = None
         self.file_path = file_path
 
-    def _parse_chat(self):
+    def _get_chat_lines(self):
         with open(self.file_path) as f:
+            c = Counter()
             self.lines = []
+            my_dict = DictWithPWL("en_US", "mywords.txt")
+            my_checker = SpellChecker(my_dict)
             for line in f:
                 if line[:4] == "*PAR":
                     inline = line[6:line.find('\x15')]
+                    print(inline)
                     try:
                         st, et = line[line.find('\x15') + 1: -2].split('_')
                         self.lines.append((inline, st, et))
@@ -111,6 +116,19 @@ class CHATFile(object):
                         return None
                     words = inline.split(" ")
             return self.lines
+
+    def _get_usable_words(self):
+        lines = self._get_chat_lines()
+        edited_lines = []
+        d = enchant.Dict("en_US")
+        for line in lines:
+            words = lines.split(" ")
+            rebuilt_line = []
+            for w in words:
+                if d.check(w) or w in ["&hm", "&uh", "&um", "[//]", "[/]", "."]:
+                    rebuild_line.append("w")
+            edited_lines.append(rebuilt_line)
+        return edited_lines
 
     def tokens(self):
         return [x.split() for x in self.lines]
@@ -195,34 +213,32 @@ class DementiaBankData(object):
                 unused_queue.put(x)
             ex_overflow = []
             while not unused_queue.empty():
-                gc.collect()
                 if unused_queue.qsize() < batch_size:
                     break
                 interviews = [unused_queue.get() for _ in range(batch_size)]
                 pool = ex_overflow + [
-                    ((y - np.min(y)) / (np.max(y) - np.min(y)), np.array([float(v) for _, v in x.scores.items()]))
+                    (y, np.array([float(v) for _, v in x.scores.items()]))
                     for x in interviews
                     for y in x.audio_segments(*audio_parameters)
                 ]
-                for y, t in pool:
-                    if np.isnan(y).any() or np.isinf(y).any():
-                        print("poop")
                 items = []
                 while len(pool) > 32:
                     yield pool[:32]
                     pool = pool[32:]
-                ex_overflow = pool
+                ex_overflow = list(pool)
         yield None
+
+class SVMCounter(object):
+
+    def __init__(self):
+        clf = svm.SVC()
+
+    def fit(X, y):
+        pass
+
 
 if __name__ == "__main__":
     dbm = DementiaBankData()
     examples = dbm.load_all_examples()
-    that_work_aud = 0
     for x in examples:
-        for y in x.audio_segments(2048, 2048, 4):
-            if y != []:
-                that_work_aud += 1
-                break
-
-
-    print(that_work_aud)
+        print(x._get_usable_words())
