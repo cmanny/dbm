@@ -11,7 +11,8 @@ import numpy as np
 from queue import Queue
 import itertools
 import enchant
-import sklearn
+from sklearn import svm
+from sklearn.linear_model import LogisticRegression
 
 
 # @UTF8
@@ -83,6 +84,9 @@ class Interview(object):
         self.cf = CHATFile(self.chat_file, self.pid)
         return self.cf._get_chat_lines()
 
+    def open_chat_file(self):
+        return CHATFile(self.chat_file, self.pid)
+
     def __repr__(self):
         return "id: {}, cha_file: {}, aud_file: {}, scores: {}".format(self.pid, self.chat_file, self.audio_file, self.scores)
 
@@ -103,30 +107,28 @@ class CHATFile(object):
         with open(self.file_path) as f:
             c = Counter()
             self.lines = []
-            my_dict = DictWithPWL("en_US", "mywords.txt")
-            my_checker = SpellChecker(my_dict)
             for line in f:
                 if line[:4] == "*PAR":
                     inline = line[6:line.find('\x15')]
-                    print(inline)
                     try:
                         st, et = line[line.find('\x15') + 1: -2].split('_')
                         self.lines.append((inline, st, et))
                     except:
                         return None
-                    words = inline.split(" ")
             return self.lines
 
     def _get_usable_words(self):
         lines = self._get_chat_lines()
         edited_lines = []
         d = enchant.Dict("en_US")
+        if lines is None:
+            return []
         for line in lines:
-            words = lines.split(" ")
+            words = line[0].split(" ")
             rebuilt_line = []
             for w in words:
-                if d.check(w) or w in ["&hm", "&uh", "&um", "[//]", "[/]", "."]:
-                    rebuild_line.append("w")
+                if (w != "") and (d.check(w) or w in ["&hm", "&uh", "&um", "[//]", "[/]", "."]):
+                    rebuilt_line.append(w)
             edited_lines.append(rebuilt_line)
         return edited_lines
 
@@ -228,17 +230,61 @@ class DementiaBankData(object):
                 ex_overflow = list(pool)
         yield None
 
-class SVMCounter(object):
+class SVMTextCounter(object):
 
     def __init__(self):
-        clf = svm.SVC()
+        self.lr = [svm.SVC() for _ in range(8)]
 
-    def fit(X, y):
-        pass
+    def _build_dictionary(self, examples):
+        self.examples = examples
+        self.counter = Counter()
+        for x in examples:
+            for line in x.open_chat_file()._get_usable_words():
+                for word in line:
+                    self.counter[word] += 1
+        print(self.counter)
+        self.lookup = list(self.counter)
+        self.n_features = len(self.counter)
+
+    def _one_hot(self, example):
+        oh = np.zeros(len(self.counter))
+        for line in example.open_chat_file()._get_usable_words():
+            for word in line:
+                index = self.lookup.index(word)
+                oh[index] += 1
+        return oh
+
+    def _test(self, examples):
+        X = np.zeros((len(examples), self.n_features))
+        y = [np.zeros((len(examples),)) for _ in range(8)]
+        for i, x in enumerate(examples):
+            ohvx = self._one_hot(x)
+            scores = np.array([int(round(float(v))) for k, v in x.scores.items()])
+            X[i, :] = ohvx
+            for j in range(8):
+                y[j][i] = scores[j]
+        ret_scores = [0 for _ in range(8)]
+        for i in range(8):
+            ret_scores[i] = self.lr[i].score(X, y[i])
+        return ret_scores
+
+    def _train(self, examples):
+        X = np.zeros((len(examples), self.n_features))
+        y = [np.zeros((len(examples),)) for _ in range(8)]
+        for i, x in enumerate(examples):
+            ohvx = self._one_hot(x)
+            scores = np.array([int(round(float(v))) for k, v in x.scores.items()])
+            X[i, :] = ohvx
+            for j in range(8):
+                y[j][i] = scores[j]
+        for i in range(8):
+            self.lr[i].fit(X, y[i])
 
 
 if __name__ == "__main__":
     dbm = DementiaBankData()
-    examples = dbm.load_all_examples()
-    for x in examples:
-        print(x._get_usable_words())
+    examples = dbm.load_all_interviews()
+    stc = SVMTextCounter()
+    stc._build_dictionary(examples)
+    stc._train(examples)
+    print(stc._test(examples))
