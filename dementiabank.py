@@ -10,6 +10,7 @@ from signal_utils import spectrogram
 import numpy as np
 from queue import Queue
 import itertools
+import gc
 
 
 # @UTF8
@@ -46,11 +47,10 @@ class Interview(object):
         return data
 
     def audio_segments(self, fft_size, win_size, thresh):
-        print(self.audio_file)
         wav = wavfile.read(self.audio_file)
         self.sample_rate = wav[0]
         adj = self.sample_rate // 1000
-        self.audio = wav[1].astype('float64')
+        audio = wav[1].astype('float64')
         segments = []
         lines = self.text_segments()
         if lines == None:
@@ -63,7 +63,7 @@ class Interview(object):
                 continue
             stadj = int(st) * adj
             etadj = int(et) * adj
-            audio_segment = self.audio[stadj : etadj]
+            audio_segment = audio[stadj : etadj]
             if len(audio_segment.shape) > 1:
                 audio_segment = np.sum(audio_segment, axis=1) // 2
             try:
@@ -74,7 +74,8 @@ class Interview(object):
                     )
                 )
             except:
-                print(audio_segment.shape)
+                pass
+                #print(audio_segment.shape)
         return segments
 
     def text_segments(self):
@@ -194,19 +195,23 @@ class DementiaBankData(object):
                 unused_queue.put(x)
             ex_overflow = []
             while not unused_queue.empty():
+                gc.collect()
                 if unused_queue.qsize() < batch_size:
                     break
                 interviews = [unused_queue.get() for _ in range(batch_size)]
                 pool = ex_overflow + [
-                    (y, np.array([float(v) for _, v in x.scores.items()]))
+                    ((y - np.min(y)) / (np.max(y) - np.min(y)), np.array([float(v) for _, v in x.scores.items()]))
                     for x in interviews
                     for y in x.audio_segments(*audio_parameters)
                 ]
+                for y, t in pool:
+                    if np.isnan(y).any() or np.isinf(y).any():
+                        print("poop")
                 items = []
                 while len(pool) > 32:
                     yield pool[:32]
                     pool = pool[32:]
-                ex_overflow = list(pool)
+                ex_overflow = pool
         yield None
 
 if __name__ == "__main__":

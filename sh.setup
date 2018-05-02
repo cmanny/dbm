@@ -1,0 +1,8 @@
+mkdir audio
+mkdir transcripts
+cd audio
+wget -r --accept "*.mp3" "media.talkbank.org/Dementia/English/Pitt/Control" --user broca --password wernicke
+wget -r --accept "*.mp3" "media.talkbank.org/Dementia/English/Pitt/Dementia" --user broca --password wernicke
+cd ../transcripts
+
+find . -name "*.mp3" -exec ffmpeg -i {} {}.wav \;

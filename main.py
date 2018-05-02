@@ -12,7 +12,7 @@ if __name__ == "__main__":
         batch_size=32,
         num_layers=1,
         input_size=1024,
-        hidden_size=128,
+        hidden_size=1024,
         sequence_lengths=None,
         learning_rate=0.001,
         save_path="ckpt/default",

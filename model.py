@@ -305,13 +305,15 @@ class DementiaBankAudioLSTM(object):
 
     def _simple_lstm(self, sequences):
         with tf.variable_scope("sequence_encoder"):
+            bn = batch_norm(self.batch_size)
+
             in_cell = MultiRNNCell(
                 [
-                    tf.contrib.rnn.DropoutWrapper(
-                        LSTMCell(self.input_size, state_is_tuple=True),
-                        output_keep_prob=self.keep_prob,
-                        state_keep_prob=self.keep_prob
-                    ) for _ in range(self.num_layers)
+                    # tf.contrib.rnn.DropoutWrapper(
+                        LSTMCell(self.input_size, state_is_tuple=True)
+                    #     output_keep_prob=self.keep_prob,
+                    #     state_keep_prob=self.keep_prob
+                    # ) for _ in range(self.num_layers)
                 ],
                 state_is_tuple=True
             )
@@ -325,7 +327,7 @@ class DementiaBankAudioLSTM(object):
             self.length = tf.placeholder(tf.int32, shape=(self.batch_size,), name="lengths")
             self.enc_outs, self.enc_state = tf.nn.dynamic_rnn(
                 in_cell,
-                inputs=sequences,
+                inputs=bn(sequences),
                 initial_state=initial_state,
                 sequence_length=self.length,
                 dtype=tf.float32
@@ -342,12 +344,13 @@ class DementiaBankAudioLSTM(object):
     def _build_loss_optimizer(self, y_p, y_t):
         with tf.name_scope("optimizer"):
             #L2 distance for input to output
+            self.y_p = y_p
             dist = y_p - y_t
             d2 = .5 * dist ** 2
-            self.loss = d2
+            self.loss = tf.reduce_sum(d2) / self.batch_size / 8
             tvars = tf.trainable_variables()
             grads = tf.gradients(self.loss, tvars)
-            grads, _ = tf.clip_by_global_norm(grads, 1)
+            grads, _ = tf.clip_by_global_norm(grads, 3)
             # And apply the gradients
             optimizer = tf.train.AdamOptimizer(self.learning_rate)
             gradients = zip(grads, tvars)
@@ -355,8 +358,9 @@ class DementiaBankAudioLSTM(object):
             tf.summary.scalar("total_loss", self.loss)
 
     def _train_batch(self, sequences, targets, length, i):
-        summary, opt, loss, length, acc = self.sess.run(
-            (self.summary_op, self.train_step, self.loss),
+        print(targets)
+        summary, opt, loss, y_p = self.sess.run(
+            (self.summary_op, self.train_step, self.loss, self.y_p),
             feed_dict={
                 self.batch_input: sequences,
                 self.length: length,
@@ -364,22 +368,26 @@ class DementiaBankAudioLSTM(object):
             }
         )
         self.summary_writer.add_summary(summary, i)
+        print(y_p)
         return loss
 
     def train(self, batch, num_batches):
         for j in range(num_batches):
             spectrogram, scores = zip(*next(batch))
-            print(spectrogram, scores)
             # Now we have k, v pairs that must go into a tensor
-            lengths = np.empty(32, dtype=np.int64)
+            lengths = np.empty(self.batch_size, dtype=np.int64)
             for i, x in enumerate(spectrogram):
                 lengths[i] = x.shape[0]
-                print(lengths[i])
-            sequences = np.empty((self.batch_size, max(lengths), self.input_size))
-            targets = np.empty((self.batch_size, 8))
-            for i in range(32):
-                sequences[i, :lengths[i], :] = spectrogram[i][:, :]
+            sequences = np.zeros((self.batch_size, max(lengths), self.input_size))
+            targets = np.zeros((self.batch_size, 8))
+            if np.isnan(sequences).any():
+                print("Oh WHAT")
+            for i in range(self.batch_size):
+                sequences[i, :lengths[i], :] = np.nan_to_num(spectrogram[i][:, :])
                 targets[i, :] = scores[i]
+            np.set_printoptions(threshold=np.nan)
+            if np.isnan(sequences).any():
+                print("OH NO")
             loss = self._train_batch(
                 sequences,
                 targets,
