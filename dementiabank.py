@@ -274,11 +274,11 @@ class SVMTextCounter(object):
         for i, x in enumerate(examples):
             ohvx = self._one_hot(x)
             scores = np.array([int(round(float(v))) for k, v in x.scores.items()])
-            X[i, :] = ohvx
             for j in range(8):
                 y[j][i] = scores[j]
         for i in range(8):
             self.lr[i].fit(X, y[i])
+
 
 
 if __name__ == "__main__":
