@@ -233,8 +233,22 @@ class SVMCounter(object):
     def __init__(self):
         clf = svm.SVC()
 
+<<<<<<< HEAD
     def fit(X, y):
         pass
+=======
+    def _train(self, examples):
+        X = np.zeros((len(examples), self.n_features))
+        y = [np.zeros((len(examples),)) for _ in range(8)]
+        for i, x in enumerate(examples):
+            ohvx = self._one_hot(x)
+            scores = np.array([int(round(float(v))) for k, v in x.scores.items()])
+            for j in range(8):
+                y[j][i] = scores[j]
+        for i in range(8):
+            self.lr[i].fit(X, y[i])
+>>>>>>> fa33ee249c0e90f97be89a15fd8b06e4f22d1c6c
+
 
 
 if __name__ == "__main__":
